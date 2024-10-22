@@ -29,4 +29,3 @@ const HomePosts = ({post}) => {
 }
 
 export default HomePosts
-
