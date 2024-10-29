@@ -14,7 +14,7 @@ const commentRoute=require('./routes/comments')
 //database
 const connectDB=async()=>{
     try{
-        await mongoose.connect("mongodb+srv://nikmishra45:Nikmishra12@#@cluster0.nmviz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+        await mongoose.connect(process.env.MONGO_URL)
         console.log("database is connected successfully!")
 
     }
@@ -22,8 +22,6 @@ const connectDB=async()=>{
         console.log(err)
     }
 }
-
-
 
 //middlewares
 dotenv.config()
@@ -52,7 +50,6 @@ app.post("/api/upload",upload.single("file"),(req,res)=>{
     // console.log(req.body)
     res.status(200).json("Image has been uploaded successfully!")
 })
-
 
 app.listen(process.env.PORT,()=>{
     connectDB()
