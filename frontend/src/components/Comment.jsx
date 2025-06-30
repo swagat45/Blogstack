@@ -6,7 +6,6 @@ import { useContext } from "react"
 import { UserContext } from "../context/UserContext"
 
 const Comment = ({c,post}) => {
-
   const {user}=useContext(UserContext)
   const deleteComment=async(id)=>{
     try{
