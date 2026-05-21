@@ -12,6 +12,8 @@ const postRoute=require('./routes/posts')
 const commentRoute=require('./routes/comments')
 const verifyToken=require('./verifyToken')
 
+dotenv.config()
+
 //database
 const connectDB=async()=>{
     try{
@@ -25,8 +27,8 @@ const connectDB=async()=>{
 }
 
 //middlewares
-dotenv.config()
 const allowedOrigin=process.env.CLIENT_URL || "http://localhost:5173"
+const port=process.env.PORT || 5000
 app.use(express.json())
 app.use("/images",express.static(path.join(__dirname,"/images")))
 app.use(cors({origin:allowedOrigin,credentials:true}))
@@ -52,7 +54,7 @@ app.post("/api/upload",verifyToken,upload.single("file"),(req,res)=>{
     res.status(200).json("Image has been uploaded successfully!")
 })
 
-app.listen(process.env.PORT,()=>{
+app.listen(port,()=>{
     connectDB()
-    console.log("app is running on port "+process.env.PORT)
+    console.log("app is running on port "+port)
 })
