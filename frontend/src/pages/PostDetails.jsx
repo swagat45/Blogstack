@@ -4,13 +4,11 @@ import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
 import {BiEdit} from 'react-icons/bi'
 import {MdDelete} from 'react-icons/md'
-import axios from "axios"
-import { URL,IF } from "../url"
 import { useContext, useEffect, useState } from "react"
 import { UserContext } from "../context/UserContext"
 import Loader from "../components/Loader"
-
-
+import api from "../api"
+import { formatPostDate, getImageUrl } from "../utils/formatters"
 const PostDetails = () => {
 
   const postId=useParams().id
@@ -20,24 +18,11 @@ const PostDetails = () => {
   const [comment,setComment]=useState("")
   const [loader,setLoader]=useState(false)
   const navigate=useNavigate()
-  
-
-  const fetchPost=async()=>{
-    try{
-      const res= await axios.get(URL+"/api/posts/"+postId)
-      // console.log(res.data)
-      setPost(res.data)
-    }
-    catch(err){
-      console.log(err)
-    }
-  }
 
   const handleDeletePost=async ()=>{
 
     try{
-      const res=await axios.delete(URL+"/api/posts/"+postId,{withCredentials:true})
-      console.log(res.data)
+      await api.delete("/api/posts/"+postId)
       navigate("/")
 
     }
@@ -48,45 +33,60 @@ const PostDetails = () => {
   }
 
   useEffect(()=>{
-    fetchPost()
+      const fetchPost=async()=>{
+        try{
+          const res= await api.get("/api/posts/"+postId)
+          setPost(res.data)
+      }
+      catch(err){
+        console.log(err)
+      }
+    }
 
+    fetchPost()
   },[postId])
 
-  const fetchPostComments=async()=>{
-    setLoader(true)
-    try{
-      const res=await axios.get(URL+"/api/comments/post/"+postId)
-      setComments(res.data)
-      setLoader(false)
-
-    }
-    catch(err){
-      setLoader(true)
-      console.log(err)
-    }
-  }
-
   useEffect(()=>{
-    fetchPostComments()
+    const fetchPostComments=async()=>{
+      setLoader(true)
+      try{
+        const res=await api.get("/api/comments/post/"+postId)
+        setComments(res.data)
+      }
+      catch(err){
+        console.log(err)
+        setComments([])
+      }
+      finally{
+        setLoader(false)
+      }
+    }
 
+    fetchPostComments()
   },[postId])
 
   const postComment=async(e)=>{
     e.preventDefault()
+    if(!user || !comment.trim()){
+      return
+    }
+
     try{
-      const res=await axios.post(URL+"/api/comments/create",
-      {comment:comment,author:user.username,postId:postId,userId:user._id},
-      {withCredentials:true})
-      
-      // fetchPostComments()
-      // setComment("")
-      window.location.reload(true)
+      const response=await api.post("/api/comments/create",
+      {comment:comment.trim(),postId:postId},
+      )
+      setComments((prev)=>[...prev,response.data])
+      setComment("")
 
     }
     catch(err){
          console.log(err)
     }
 
+  }
+
+  const handleDeleteComment=(deletedId)=>{
+    setComments((prev)=>prev.filter((item)=>item._id!==deletedId))
   }
 
 
@@ -105,20 +105,16 @@ const PostDetails = () => {
         <div className="flex items-center justify-between mt-2 md:mt-4">
         <p>@{post.username}</p>
        <div className="flex space-x-2">
-       <p>{new Date(post.updatedAt).toString().slice(0,15)}</p>
-       <p>{new Date(post.updatedAt).toString().slice(16,24)}</p>
+       <p>{formatPostDate(post.updatedAt)}</p>
        </div>
         </div>
-        <img src={IF+post.photo} className="w-full  mx-auto mt-8" alt=""/>
+        <img src={getImageUrl(post.photo)} className="w-full mx-auto mt-8" alt={post.title}/>
          <p className="mx-auto mt-8">{post.desc}</p>
          <div className="flex items-center mt-8 space-x-4 font-semibold">
           <p>Categories:</p>
           <div className="flex justify-center items-center space-x-2">
           {post.categories?.map((c,i)=>(
-            <>
             <div key={i} className="bg-gray-300 rounded-lg px-3 py-1">{c}</div>
-            </>
-            
           ))}
             
           </div>
@@ -126,7 +122,7 @@ const PostDetails = () => {
          <div className="flex flex-col mt-4">
          <h3 className="mt-6 mb-4 font-semibold">Comments:</h3>
          {comments?.map((c)=>(
-          <Comment key={c._id} c={c} post={post} />
+          <Comment key={c._id} c={c} onDelete={handleDeleteComment} />
          ))}
            
          </div>

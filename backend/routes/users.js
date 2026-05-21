@@ -10,16 +10,21 @@ const verifyToken = require('../verifyToken')
 //UPDATE
 router.put("/:id",verifyToken,async (req,res)=>{
     try{
+        if(req.userId!==req.params.id){
+            return res.status(403).json("You can update only your own account.")
+        }
+
         if(req.body.password){
             const salt=await bcrypt.genSalt(10)
-            req.body.password=await bcrypt.hashSync(req.body.password,salt)
+            req.body.password=await bcrypt.hash(req.body.password,salt)
         }
         const updatedUser=await User.findByIdAndUpdate(req.params.id,{$set:req.body},{new:true})
-        res.status(200).json(updatedUser)
+        const {password,...info}=updatedUser._doc
+        res.status(200).json(info)
 
     }
     catch(err){
-        res.status(500).json(err)
+        res.status(500).json("Unable to update user.")
     }
 })
 
@@ -27,6 +32,10 @@ router.put("/:id",verifyToken,async (req,res)=>{
 //DELETE
 router.delete("/:id",verifyToken,async (req,res)=>{
     try{
+        if(req.userId!==req.params.id){
+            return res.status(403).json("You can delete only your own account.")
+        }
+
         await User.findByIdAndDelete(req.params.id)
         await Post.deleteMany({userId:req.params.id})
         await Comment.deleteMany({userId:req.params.id})
@@ -34,7 +43,7 @@ router.delete("/:id",verifyToken,async (req,res)=>{
 
     }
     catch(err){
-        res.status(500).json(err)
+        res.status(500).json("Unable to delete user.")
     }
 })
 
@@ -43,11 +52,14 @@ router.delete("/:id",verifyToken,async (req,res)=>{
 router.get("/:id",async (req,res)=>{
     try{
         const user=await User.findById(req.params.id)
+        if(!user){
+            return res.status(404).json("User not found!")
+        }
         const {password,...info}=user._doc
         res.status(200).json(info)
     }
     catch(err){
-        res.status(500).json(err)
+        res.status(500).json("Unable to fetch user.")
     }
 })
 

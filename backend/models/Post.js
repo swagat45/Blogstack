@@ -4,12 +4,13 @@ const PostSchema=new mongoose.Schema({
     title:{
         type:String,
         required:true,
-        unique:true
+        unique:true,
+        trim:true
     },
     desc:{
         type:String,
         required:true,
-        unique:true
+        trim:true
     },
     photo:{
         type:String,
@@ -18,7 +19,8 @@ const PostSchema=new mongoose.Schema({
     },
     username:{
         type:String,
-        required:true,  
+        required:true,
+        trim:true  
     },
     userId:{
         type:String,
@@ -26,7 +28,7 @@ const PostSchema=new mongoose.Schema({
     },
     categories:{
         type:Array,
-        
+        default:[]
     },
 },{timestamps:true})
 

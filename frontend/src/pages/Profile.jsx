@@ -2,10 +2,9 @@ import { useContext, useEffect, useState } from "react"
 import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
 import ProfilePosts from "../components/ProfilePosts"
-import axios from "axios"
-import { IF, URL } from "../url"
 import { UserContext } from "../context/UserContext"
 import { useNavigate, useParams } from "react-router-dom"
+import api from "../api"
 
 
 const Profile = () => {
@@ -17,25 +16,22 @@ const Profile = () => {
   const navigate=useNavigate()
   const [posts,setPosts]=useState([])
   const [updated,setUpdated]=useState(false)
-  // console.log(user)
-
-const fetchProfile=async ()=>{
-  try{
-     const res=await axios.get(URL+"/api/users/"+user._id)
-     setUsername(res.data.username)
-     setEmail(res.data.email)
-     setPassword(res.data.password)
-  }
-  catch(err){
-     console.log(err)
-  }
-}
 
 const handleUserUpdate=async ()=>{
+  if(!user || user._id!==param){
+    return
+  }
+
   setUpdated(false)
   try{
-    const res=await axios.put(URL+"/api/users/"+user._id,{username,email,password},{withCredentials:true})
-    // console.log(res.data)
+    const payload={username,email}
+    if(password.trim()){
+      payload.password=password
+    }
+
+    const res=await api.put("/api/users/"+user._id,payload)
+    setUser((prev)=>prev ? {...prev,...res.data} : prev)
+    setPassword("")
     setUpdated(true)
 
   }
@@ -48,23 +44,9 @@ const handleUserUpdate=async ()=>{
 
 const handleUserDelete=async()=>{
   try{
-    const res=await axios.delete(URL+"/api/users/"+user._id,{withCredentials:true})
+    await api.delete("/api/users/"+user._id)
     setUser(null)
     navigate("/")
-    // console.log(res.data)
-
-  }
-  catch(err){
-    console.log(err)
-  }
-}
-// console.log(user)
-const fetchUserPosts=async ()=>{
-  try{
-    const res=await axios.get(URL+"/api/posts/user/"+user._id)
-    // console.log(res.data)
-    setPosts(res.data)
-
 
   }
   catch(err){
@@ -73,13 +55,40 @@ const fetchUserPosts=async ()=>{
 }
 
 useEffect(()=>{
-  fetchProfile()
+  if(!param){
+    return
+  }
 
+  const fetchProfile=async ()=>{
+    try{
+       const res=await api.get("/api/users/"+param)
+       setUsername(res.data.username)
+       setEmail(res.data.email)
+    }
+    catch(err){
+       console.log(err)
+    }
+  }
+
+  fetchProfile()
 },[param])
 
 useEffect(()=>{
-  fetchUserPosts()
+  if(!param){
+    return
+  }
 
+  const fetchUserPosts=async ()=>{
+    try{
+      const res=await api.get("/api/posts/user/"+param)
+      setPosts(res.data)
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+
+  fetchUserPosts()
 },[param])
 
   return (
@@ -97,11 +106,11 @@ useEffect(()=>{
         <h1 className="text-xl font-bold mb-4">Profile</h1>
           <input onChange={(e)=>setUsername(e.target.value)} value={username} className="outline-none px-4 py-2 text-gray-500" placeholder="Your username" type="text"/>
           <input onChange={(e)=>setEmail(e.target.value)} value={email} className="outline-none px-4 py-2 text-gray-500" placeholder="Your email" type="email"/>
-          {/* <input onChange={(e)=>setPassword(e.target.value)} value={password} className="outline-none px-4 py-2 text-gray-500" placeholder="Your password" type="password"/> */}
-          <div className="flex items-center space-x-4 mt-8">
+          {user?._id===param && <input onChange={(e)=>setPassword(e.target.value)} value={password} className="outline-none px-4 py-2 text-gray-500" placeholder="New password (optional)" type="password"/>}
+          {user?._id===param && <div className="flex items-center space-x-4 mt-8">
             <button onClick={handleUserUpdate} className="text-white font-semibold bg-black px-4 py-2 hover:text-black hover:bg-gray-400">Update</button>
             <button onClick={handleUserDelete} className="text-white font-semibold bg-black px-4 py-2 hover:text-black hover:bg-gray-400">Delete</button>
-          </div>
+          </div>}
           {updated && <h3 className="text-green-500 text-sm text-center mt-4">user updated successfully!</h3>}
         </div>
           

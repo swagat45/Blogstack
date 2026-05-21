@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "react-router-dom"
 import Footer from "../components/Footer"
 import { useState } from "react"
-import axios from 'axios'
-import {URL} from '../url'
+import api from "../api"
 
 
 const Register = () => {
@@ -14,13 +13,9 @@ const Register = () => {
   const navigate=useNavigate()
 
   const handleRegister=async ()=>{
-    
+    setError(false)
     try{
-      const res=await axios.post(URL+"/api/auth/register",{username,email,password})
-      setUsername(res.data.username)
-      setEmail(res.data.email)
-      setPassword(res.data.password)
-      setError(false)
+      await api.post("/api/auth/register",{username,email,password})
       navigate("/login")
       
     }

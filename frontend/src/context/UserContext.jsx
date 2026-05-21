@@ -1,7 +1,7 @@
-import axios from "axios";
 import { createContext, useEffect, useState } from "react";
-import { URL } from "../url";
+import api from "../api";
 
+/* eslint-disable react/prop-types */
 
 export const UserContext=createContext({})
 
@@ -16,8 +16,7 @@ export function UserContextProvider({children}){
 
     const getUser=async()=>{
       try{
-        const res=await axios.get(URL+"/api/auth/refetch",{withCredentials:true})
-        // console.log(res.data)
+        const res=await api.get("/api/auth/refetch")
         setUser(res.data)
 
       }

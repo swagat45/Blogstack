@@ -4,10 +4,12 @@ const CommentSchema=new mongoose.Schema({
     comment:{
         type:String,
         required:true,
+        trim:true
     },
     author:{
         type:String,
         required:true,
+        trim:true
     },
     postId:{
         type:String,

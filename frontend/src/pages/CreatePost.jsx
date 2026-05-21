@@ -4,9 +4,8 @@ import Footer from '../components/Footer'
 import {ImCross} from 'react-icons/im'
 import { useContext, useState } from 'react'
 import { UserContext } from '../context/UserContext'
-import { URL } from '../url'
-import axios from 'axios'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import api from '../api'
 
 const CreatePost = () => {
    
@@ -21,25 +20,35 @@ const CreatePost = () => {
 
     const deleteCategory=(i)=>{
        let updatedCats=[...cats]
-       updatedCats.splice(i)
+       updatedCats.splice(i,1)
        setCats(updatedCats)
     }
 
     const addCategory=()=>{
+        if(!cat.trim()){
+          return
+        }
         let updatedCats=[...cats]
-        updatedCats.push(cat)
+        updatedCats.push(cat.trim())
         setCat("")
         setCats(updatedCats)
     }
 
     const handleCreate=async (e)=>{
         e.preventDefault()
+        if(!user){
+          navigate("/login")
+          return
+        }
+
         const post={
-          title,
-          desc,
-          username:user.username,
-          userId:user._id,
+          title:title.trim(),
+          desc:desc.trim(),
           categories:cats
+        }
+
+        if(!post.title || !post.desc){
+          return
         }
 
         if(file){
@@ -48,22 +57,16 @@ const CreatePost = () => {
           data.append("img",filename)
           data.append("file",file)
           post.photo=filename
-          // console.log(data)
-          //img upload
           try{
-            const imgUpload=await axios.post(URL+"/api/upload",data)
-            // console.log(imgUpload.data)
+            await api.post("/api/upload",data)
           }
           catch(err){
             console.log(err)
           }
         }
-        //post upload
-        // console.log(post)
         try{
-          const res=await axios.post(URL+"/api/posts/create",post,{withCredentials:true})
+          const res=await api.post("/api/posts/create",post)
           navigate("/posts/post/"+res.data._id)
-          // console.log(res.data)
 
         }
         catch(err){

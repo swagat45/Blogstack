@@ -2,10 +2,9 @@ import { useContext, useEffect, useState } from "react"
 import Footer from "../components/Footer"
 import Navbar from "../components/Navbar"
 import {ImCross} from 'react-icons/im'
-import axios from "axios"
-import { URL } from "../url"
 import { useNavigate, useParams } from "react-router-dom"
 import { UserContext } from "../context/UserContext"
+import api from "../api"
 
 
 const EditPost = () => {
@@ -16,31 +15,26 @@ const EditPost = () => {
     const [title,setTitle]=useState("")
     const [desc,setDesc]=useState("")
     const [file,setFile]=useState(null)
+    const [existingPhoto,setExistingPhoto]=useState("")
     const [cat,setCat]=useState("")
     const [cats,setCats]=useState([])
 
-    const fetchPost=async()=>{
-      try{
-        const res=await axios.get(URL+"/api/posts/"+postId)
-        setTitle(res.data.title)
-        setDesc(res.data.desc)
-        setFile(res.data.photo)
-        setCats(res.data.categories)
-
-      }
-      catch(err){
-        console.log(err)
-      }
-    }
-
     const handleUpdate=async (e)=>{
       e.preventDefault()
+      if(!user){
+        navigate("/login")
+        return
+      }
+
       const post={
-        title,
-        desc,
-        username:user.username,
-        userId:user._id,
-        categories:cats
+        title:title.trim(),
+        desc:desc.trim(),
+        categories:cats,
+        photo:existingPhoto
+      }
+
+      if(!post.title || !post.desc){
+        return
       }
 
       if(file){
@@ -49,22 +43,17 @@ const EditPost = () => {
         data.append("img",filename)
         data.append("file",file)
         post.photo=filename
-        // console.log(data)
-        //img upload
         try{
-          const imgUpload=await axios.post(URL+"/api/upload",data)
-          // console.log(imgUpload.data)
+          await api.post("/api/upload",data)
         }
         catch(err){
           console.log(err)
         }
       }
-      //post upload
-     
+
       try{
-        const res=await axios.put(URL+"/api/posts/"+postId,post,{withCredentials:true})
+        const res=await api.put("/api/posts/"+postId,post)
         navigate("/posts/post/"+res.data._id)
-        // console.log(res.data)
 
       }
       catch(err){
@@ -75,18 +64,34 @@ const EditPost = () => {
     
 
     useEffect(()=>{
+      const fetchPost=async()=>{
+        try{
+          const res=await api.get("/api/posts/"+postId)
+          setTitle(res.data.title)
+          setDesc(res.data.desc)
+          setExistingPhoto(res.data.photo || "")
+          setCats(res.data.categories || [])
+        }
+        catch(err){
+          console.log(err)
+        }
+      }
+
       fetchPost()
     },[postId])
 
     const deleteCategory=(i)=>{
        let updatedCats=[...cats]
-       updatedCats.splice(i)
+       updatedCats.splice(i,1)
        setCats(updatedCats)
     }
 
     const addCategory=()=>{
+        if(!cat.trim()){
+          return
+        }
         let updatedCats=[...cats]
-        updatedCats.push(cat)
+        updatedCats.push(cat.trim())
         setCat("")
         setCats(updatedCats)
     }

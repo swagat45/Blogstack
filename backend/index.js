@@ -10,6 +10,7 @@ const authRoute=require('./routes/auth')
 const userRoute=require('./routes/users')
 const postRoute=require('./routes/posts')
 const commentRoute=require('./routes/comments')
+const verifyToken=require('./verifyToken')
 
 //database
 const connectDB=async()=>{
@@ -25,9 +26,10 @@ const connectDB=async()=>{
 
 //middlewares
 dotenv.config()
+const allowedOrigin=process.env.CLIENT_URL || "http://localhost:5173"
 app.use(express.json())
 app.use("/images",express.static(path.join(__dirname,"/images")))
-app.use(cors({origin:"http://localhost:5173",credentials:true}))
+app.use(cors({origin:allowedOrigin,credentials:true}))
 app.use(cookieParser())
 app.use("/api/auth",authRoute)
 app.use("/api/users",userRoute)
@@ -37,17 +39,16 @@ app.use("/api/comments",commentRoute)
 //image upload
 const storage=multer.diskStorage({
     destination:(req,file,fn)=>{
-        fn(null,"images")
+        fn(null,path.join(__dirname,"images"))
     },
     filename:(req,file,fn)=>{
-        fn(null,req.body.img)
-        // fn(null,"image1.jpg")
+        const safeName=path.basename(req.body.img || `${Date.now()}-${file.originalname}`).replace(/\s+/g,"-")
+        fn(null,safeName)
     }
 })
 
 const upload=multer({storage:storage})
-app.post("/api/upload",upload.single("file"),(req,res)=>{
-    // console.log(req.body)
+app.post("/api/upload",verifyToken,upload.single("file"),(req,res)=>{
     res.status(200).json("Image has been uploaded successfully!")
 })
 
